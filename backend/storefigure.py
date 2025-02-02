@@ -11,7 +11,7 @@ collectionName = "figures"
 figurescollection = client[dbName][collectionName]
 
 def insertfigure(data):
-    res = figurescollection.insert_one(data)
+    return figurescollection.insert_one(data)
 
 def getfigures(figure_id=None):
     if figure_id:

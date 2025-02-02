@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from storefigure import insertfigure, getfigures
 from langur import query_rag_system
+from mongidb import insert_embed
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -27,7 +28,9 @@ def create_memorial():
                 "is_alive": is_alive,
                 "voice": voice
             }
-    insertfigure(i_data)
+    res = insertfigure(i_data)
+    sid = str(res.inserted_id)
+    insert_embed(bio, sid)
     # Return a success response
     return jsonify({
         'status': 'success',

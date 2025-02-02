@@ -156,7 +156,7 @@ const MemorialProfile = () => {
     if (txt.trim()) {
       try {
         const response = await axios.post('http://localhost:5000/api/sendmsg', {
-          did: 1,
+          did: memorial._id,
           question: txt,
           past_convo: voices.map(msg => `${msg.sender}: ${msg.text}`).join('\n'),
           name: memorial.name
@@ -183,7 +183,7 @@ const MemorialProfile = () => {
         
       try {
         const pathaune = {
-          did: 1,//memorial._id,
+          did: memorial._id,
           question: message,
           past_convo: conversationHistory,
           name: memorial.name

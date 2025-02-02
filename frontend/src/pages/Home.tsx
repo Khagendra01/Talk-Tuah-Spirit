@@ -216,19 +216,6 @@ const cloneVoice = async (audioFile: any, name: string, description: string) => 
                 />
               </div>
 
-              {/* Checkbox for "Is Alive" */}
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={newMemorial.isAlive}
-                  onChange={(e) => {
-                    setNewMemorial({...newMemorial, isAlive: e.target.checked});
-                    if (e.target.checked) setNewMemorial({...newMemorial, death: ''}); // Clear death date if alive
-                  }}
-                  className="mr-2"
-                />
-                <label className="text-sm font-medium text-gray-300">Is Alive</label>
-              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

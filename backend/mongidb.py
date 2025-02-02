@@ -5,6 +5,7 @@ from pymongo.server_api import ServerApi
 import requests
 from dotenv import load_dotenv
 import os
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # Load environment variables
 load_dotenv()
@@ -34,7 +35,6 @@ embeddings = OpenAIEmbeddings()
     
 #     # Create a document with id, text, and embedding
 #     document_to_insert = {
-#         "id": doc["id"],
 #         "text": doc["text"],
 #         "embedding": embedding
 #     }
@@ -43,6 +43,37 @@ embeddings = OpenAIEmbeddings()
 #     collection.insert_one(document_to_insert)
 
 # print("Documents inserted successfully.")
+
+def insert_embed(bio, doc_id):
+    # Initialize text splitter
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=650,        # Characters per chunk
+        chunk_overlap=250,      # Overlap between chunks to maintain context
+        length_function=len,
+        separators=["\n\n", "\n", " ", ""]
+    )
+    
+    # Split the text into chunks
+    chunks = text_splitter.split_text(bio)
+    
+    # Generate embeddings and insert chunks
+    for i, chunk in enumerate(chunks):
+        # Generate embedding for the chunk
+        embedding = embeddings.embed_query(chunk)
+        
+        # Create a document with id, text, and embedding
+        document_to_insert = {
+            "id": f"{doc_id}_chunk_{i}",  # Unique ID for each chunk
+            "parent_id": doc_id,          # Original document ID
+            "chunk_index": i,             # Position in the original text
+            "text": chunk,
+            "embedding": embedding
+        }
+        
+        # Insert the document into the collection
+        collection.insert_one(document_to_insert)
+    
+    return len(chunks)  # Return number of chunks created
 
 # Define a function to query data with filtering by id
 def query_data_with_id(query, doc_id):
@@ -83,3 +114,4 @@ def query_data_with_id(query, doc_id):
 # doc_id = "doc1"
 # results = query_data_with_id(query, doc_id)
 # print(results)
+print(len(embeddings.embed_query("query")))

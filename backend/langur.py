@@ -145,7 +145,7 @@ def query_rag_system(did: str, question: str, past_conv: str, name: str) -> str:
         "answer": "",
         "attempts": 0,
         "can_answer": False,
-        "doc_id": int(did),
+        "doc_id": did,
         "pastcon": past_conv,
         "name": name
     }
