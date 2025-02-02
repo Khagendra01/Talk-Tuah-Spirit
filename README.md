@@ -1,2 +1,2 @@
-# Talk-Tuah-Ghost
+# Talk-Tuah-Spirit
 Hack RU
