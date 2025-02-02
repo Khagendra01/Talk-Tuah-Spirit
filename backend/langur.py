@@ -4,7 +4,6 @@ from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from typing import List, TypedDict, Tuple
 import os
-from hf import generate_embedding
 from pymongo import MongoClient
 from langchain_openai import OpenAIEmbeddings
 from pymongo.server_api import ServerApi
@@ -19,7 +18,7 @@ os.environ["OPENAI_API_KEY"] = os.getenv('OPENAI_API_KEY')
 uri = os.getenv('MONGODB_URI')
 client = MongoClient(uri, server_api=ServerApi('1'))
 dbName = os.getenv('MONGODB_DB_NAME')
-collectionName = "hf"
+collectionName = "vecty"
 collection = client[dbName][collectionName]
 embeddings = OpenAIEmbeddings()
 
@@ -41,7 +40,7 @@ class State(TypedDict):
 
 def retrieve(state: State) -> dict:
         # Convert question to vector using OpenAI embeddings
-    query_embedding = generate_embedding(state["question"])
+    query_embedding = embeddings.embed_query(state["question"])
     
     # Perform Atlas Vector Search with filtering by id
     results = collection.aggregate([

@@ -70,11 +70,11 @@ def query_data_with_id(query, doc_id):
     # Return the results
     return list(results)
 
-# Example usage
-query = "33 trophies"
-doc_id = 1
-results = query_data_with_id(query, doc_id)
-tmp=""
-for d in results:
-	tmp += d['text']
-print(tmp)
+# # Example usage
+# query = "33 trophies"
+# doc_id = 1
+# results = query_data_with_id(query, doc_id)
+# tmp=""
+# for d in results:
+# 	tmp += d['text']
+# print(tmp)
