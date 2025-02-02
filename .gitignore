@@ -24,7 +24,15 @@ build/
 *.video.mp4
 
 # Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
 .terraform/
+
+terraform.tfstate.backup
+.terraformrc
+terraform.rc
 
 # IDEs and Editors
 .vscode/
@@ -48,3 +56,40 @@ Thumbs.db
 coverage.xml
 nosetests.xml
 test_coverage/
+
+# Environment Variables
+.env
+.env.*
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# AWS
+.aws/
+aws.json
+credentials
+config
+
+# MongoDB
+mongodb.config
+*.pem
+*mongodb*.json
+
+# Node
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+coverage/
+
+# Secrets and Keys
+*.key
+*.pem
+*.crt
+*.cert
+*.password
+*secret*
+*credential*

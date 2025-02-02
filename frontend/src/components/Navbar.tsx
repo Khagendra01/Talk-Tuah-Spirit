@@ -14,7 +14,7 @@ const Navbar = () => {
           <Link to="/" className="flex items-center space-x-2">
             <Ghost className="h-8 w-8 text-purple-400" />
             <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
-              Talk Tuah Ghost
+              Talk Tuah Spirit
             </span>
           </Link>
           {/* <button
