@@ -82,7 +82,7 @@ const MemorialProfile = () => {
   const playTextToSpeech = async (text: string) => {
     try {
       const response = await client.textToSpeech.convert(
-        "6AGekT2sbNEtCcYlA5Kx",
+        memorial?.voice || "21m00Tcm4TlvDq8ikWAM",
         {
           output_format: "mp3_44100_128",
           text: text,
