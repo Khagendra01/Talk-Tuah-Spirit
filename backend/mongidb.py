@@ -15,6 +15,8 @@ client = MongoClient(uri, server_api=ServerApi('1'))
 dbName = os.getenv('MONGODB_DB_NAME')
 collectionName = "vecty"
 collection = client[dbName][collectionName]
+tribcol = client[dbName]["tribute"]
+
 
 hf_token = os.getenv('HF_TOKEN')
 embedding_url = os.getenv('HF_EMBEDDING_URL')
@@ -115,3 +117,22 @@ def query_data_with_id(query, doc_id):
 # results = query_data_with_id(query, doc_id)
 # print(results)
 print(len(embeddings.embed_query("query")))
+
+def insert_tribute(data):
+    tribcol.insert_one(data)
+
+def get_tributes_by_memorial_id(memorial_id):
+    """
+    Fetch all tributes for a specific memorial, sorted by creation time (newest first)
+    """
+    try:
+        # Convert tributes cursor to list and sort by created_at in descending order
+        tributes = list(tribcol.find(
+            {"memorial_id": memorial_id},
+            {"_id": 0}  # Exclude MongoDB's _id from results
+        ).sort("created_at", -1))
+        
+        return tributes
+    except Exception as e:
+        print(f"Error fetching tributes: {str(e)}")
+        return []
