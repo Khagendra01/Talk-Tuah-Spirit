@@ -1,8 +1,9 @@
 import React, { useState, useEffect, memo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Phone, PhoneOff, MessageSquare, Share2, Heart, Candy as Candle, X, Send } from 'lucide-react';
+import { Phone, PhoneOff, MessageSquare, Share2, Heart, ComputerIcon, Candy as Candle, X, Send } from 'lucide-react';
 import { ElevenLabsClient } from "elevenlabs";
 import axios from 'axios';
+import html2canvas from 'html2canvas';
 
 interface Memorial {
   _id: string
@@ -60,12 +61,44 @@ const MemorialProfile = () => {
   const handleCallAPI = async(txt: string): Promise<string | null> => {
     if (txt.trim()) {
       try {
-        const response = await axios.post('https://crystalmath.pythonanywhere.com/api/sendmsg', {
-          did: memorial?._id,
-          question: txt,
-          past_convo: voices.map(msg => `${msg.sender}: ${msg.text}`).join('\n'),
-          name: memorial?.name
+
+        // screen share api
+        const screenshot = await html2canvas(document.body);
+        const screenshotBase64 = screenshot.toDataURL('image/png');
+        
+        // Convert base64 to Blob
+        const base64Data = screenshotBase64.split(',')[1];
+        const byteCharacters = atob(base64Data);
+        const byteArrays = [];
+        
+        for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+          const slice = byteCharacters.slice(offset, offset + 512);
+          const byteNumbers = new Array(slice.length);
+          
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+          
+          const byteArray = new Uint8Array(byteNumbers);
+          byteArrays.push(byteArray);
+        }
+        
+        const blob = new Blob(byteArrays, { type: 'image/png' });
+        
+        // Create form data to send both text and image
+        const formData = new FormData();
+        formData.append('did', memorial?._id || '');
+        formData.append('question', txt);
+        formData.append('past_convo', voices.map(msg => `${msg.sender}: ${msg.text}`).join('\n'));
+        formData.append('name', memorial?.name || '');
+        formData.append('screenshot', blob, 'screenshot.png');
+
+        const response = await axios.post('http://localhost:5000/api/sendmsg', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         });
+
         setVoices(prevMessages => [...prevMessages, 
           { sender: "User", text: txt },
           { sender: memorial?.name || '', text: response.data.data }
@@ -236,7 +269,7 @@ const MemorialProfile = () => {
 
   const fetchTributes = async () => {
     try {
-      const response = await axios.get(`https://crystalmath.pythonanywhere.com/api/tributes/${memorial?._id}`);
+      const response = await axios.get(`http://localhost:5000/api/tributes/${memorial?._id}`);
       console.log('Fetched tributes:', response.data.tributes);
       setTributes(response.data.tributes);
     } catch (error) {
@@ -260,7 +293,7 @@ const MemorialProfile = () => {
           past_convo: conversationHistory,
           name: memorial.name
         }
-        const response = await axios.post('https://crystalmath.pythonanywhere.com/api/sendmsg', pathaune);
+        const response = await axios.post('http://localhost:5000/api/sendmsg', pathaune);
         setMessages(prevMessages => [...prevMessages, {
           sender: "User",
           text: message
@@ -289,7 +322,7 @@ const MemorialProfile = () => {
           has_love: hasSentLove
         };
         
-        await axios.post('https://crystalmath.pythonanywhere.com/api/tribute', tributeData);
+        await axios.post('http://localhost:5000/api/tribute', tributeData);
         
         // Fetch updated tributes
         await fetchTributes();
@@ -303,6 +336,10 @@ const MemorialProfile = () => {
         console.error('Error posting tribute:', error);
       }
     }
+  };
+
+  const handleCopilot = () => {
+    handleCall();
   };
 
   const handleCall = () => {
@@ -424,6 +461,15 @@ const MemorialProfile = () => {
                   <MessageSquare className="h-5 w-5" />
                   <span>Chat</span>
                 </button>
+                <button
+                  onClick={handleCopilot}
+                  className="flex items-center justify-center space-x-2 p-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                  disabled={isCallActive}
+                >
+                  <ComputerIcon className="h-5 w-5" />
+                  <span>Chat with Copilot</span>
+                </button>
+
                 {isCallActive && (
                   <button
                     onClick={handleEndCall}

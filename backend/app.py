@@ -4,9 +4,15 @@ from storefigure import insertfigure, getfigures
 from langur import query_rag_system
 from mongidb import insert_embed, insert_tribute, get_tributes_by_memorial_id
 from datetime import datetime
+import os
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+# Create uploads directory if it doesn't exist
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 # Route to handle the POST request
 @app.route('/api/addmemorials', methods=['POST'])
@@ -62,18 +68,33 @@ def get_a_memorials():
 
 @app.route('/api/sendmsg', methods=['POST'])
 def send_ai_msg():
+    try:
+        # Get form data
+        did = request.form.get('did')
+        question = request.form.get('question')
+        past_convo = request.form.get('past_convo')
+        name = request.form.get('name')
+        
+        # Handle screenshot file
+        if 'screenshot' in request.files:
+            screenshot = request.files['screenshot']
+            if screenshot:
+                # Generate unique filename using timestamp
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                filename = f'screenshot_{timestamp}.png'
+                filepath = os.path.join(UPLOAD_FOLDER, filename)
+                screenshot.save(filepath)
+                print(f'Screenshot saved to: {filepath}')
 
-    data = request.get_json()
-
-    did = data.get('did')
-    question = data.get('question')
-    past_convo = data.get('past_convo')
-    name = data.get('name')
-
-    reply = query_rag_system(did, question, past_convo, name)
-    return jsonify({
-        'data': reply
-    }), 201
+        reply = query_rag_system(did, question, past_convo, name, filepath)
+        return jsonify({
+            'data': reply
+        }), 201
+    except Exception as e:
+        print(f'Error processing request: {str(e)}')
+        return jsonify({
+            'error': str(e)
+        }), 500
 
 @app.route('/api/tribute', methods=['POST'])
 def create_tribute():
@@ -125,6 +146,10 @@ def get_tributes(memorial_id):
             'status': 'error',
             'message': str(e)
         }), 500
+
+
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=5000)

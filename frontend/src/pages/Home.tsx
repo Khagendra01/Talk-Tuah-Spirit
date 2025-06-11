@@ -40,7 +40,7 @@ const Home = () => {
   const [memorials, setMemorials] = React.useState<Memorial[]>([]); // State to store fetched memorials
   const fetchMemorials = async () => {
     try {
-      const response = await axios.get('https://crystalmath.pythonanywhere.com/api/getmemorials');
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/getmemorials`);
       setMemorials(response.data.data);
       console.log(response.data.data);
     } catch (error) {
@@ -125,7 +125,7 @@ const cloneVoice = async (audioFile: any, name: string, description: string) => 
       };
 
       // Send data to Flask backend
-      const response = await axios.post('https://crystalmath.pythonanywhere.com/api/addmemorials', memorialData);
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/addmemorials`, memorialData);
       console.log('Memorial created:', response.data);
 
       // Reset form and close modal

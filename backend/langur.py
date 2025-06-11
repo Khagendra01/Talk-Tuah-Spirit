@@ -7,6 +7,9 @@ from pymongo import MongoClient
 from langchain_openai import OpenAIEmbeddings
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
+import base64
+from PIL import Image
+import io
 
 # Note: The following import is the corrected version for the deprecation warning,
 # though it is not used in this specific file, it's good practice to update it
@@ -41,6 +44,8 @@ class State(TypedDict):
     doc_id: int
     name: str
     is_famous: bool
+    filepath: str
+    image_context: str
 
 def retrieve(state: State) -> dict:
     """
@@ -105,23 +110,67 @@ def check_answerable(state: State) -> dict:
     can_answer = response.content.strip().lower() == "yes"
     return {"can_answer": can_answer}
 
+def analyze_image(filepath: str) -> str:
+    """
+    Analyze the image using GPT-4 Vision and return a description.
+    """
+    try:
+        # Read and encode the image
+        with open(filepath, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+        
+        # Create a vision-capable LLM
+        vision_llm = ChatOpenAI(model="gpt-4-vision-preview", max_tokens=300)
+        
+        # Create the message with the image
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that describes images in detail. Focus on any text, UI elements, or important visual information that might be relevant to a conversation."
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Please describe what you see in this image, focusing on any text, UI elements, or important visual information."
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ]
+        
+        response = vision_llm.invoke(messages)
+        return response.content
+    except Exception as e:
+        print(f"Error analyzing image: {str(e)}")
+        return ""
+
 def generate_answer(state: State) -> dict:
     """
-    Generate an answer based on the context or general knowledge.
+    Generate an answer based on the context, image content, or general knowledge.
     """
     context = state["context"]
+    image_context = state.get("image_context", "")
+    
     system_message = (
         f"Act as {state['name']}. Respond in a conversational tone, keeping your answers brief and to the point. "
+        "Consider both the context and any visual information from the screenshot when answering. "
         "If the context below is not sufficient or empty, use your own general knowledge to answer the question about this person."
     )
+    
     messages = [
         {"role": "system", "content": system_message},
-        {"role": "user", "content": f"Question: {state['question']}\nContext: {context}\nPast Conversation: {state['pastcon']}"}
+        {"role": "user", "content": f"Question: {state['question']}\nContext: {context}\nImage Content: {image_context}\nPast Conversation: {state['pastcon']}"}
     ]
+    
     response = llm.invoke(messages)
-    # Ensure the final answer is tagged correctly for the graph to terminate
     return {"answer": response.content, "can_answer": True}
-
 
 def rephrase_question(state: State) -> dict:
     """
@@ -207,14 +256,20 @@ workflow.add_edge("rephrase_question", "increment_attempts")
 workflow.add_edge("increment_attempts", "retrieve")
 workflow.add_edge("generate_answer", END)
 
+
 # Compile the graph
 graph = workflow.compile()
 
 
-def query_rag_system(did: str, question: str, past_conv: str, name: str) -> str:
+def query_rag_system(did: str, question: str, past_conv: str, name: str, filepath: str) -> str:
     """
-    Query the RAG system.
+    Query the RAG system with image analysis.
     """
+    # Analyze the image if a filepath is provided
+    image_context = ""
+    if filepath and os.path.exists(filepath):
+        image_context = analyze_image(filepath)
+    
     initial_state = {
         "question": question,
         "context": "",
@@ -224,7 +279,9 @@ def query_rag_system(did: str, question: str, past_conv: str, name: str) -> str:
         "doc_id": did,
         "pastcon": past_conv,
         "name": name,
-        "is_famous": False
+        "is_famous": False,
+        "filepath": filepath,
+        "image_context": image_context
     }
     
     result = graph.invoke(initial_state)
